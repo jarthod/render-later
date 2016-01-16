@@ -1,7 +1,6 @@
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-require 'action_view'
-require 'render-later'
-require './app/helpers/render-later/helper.rb'
-require 'minitest/autorun'
+# Configure Rails Environment
+ENV["RAILS_ENV"] = "test"
+require File.expand_path("../../test/dummy/config/environment.rb",  __FILE__)
 
 ActiveSupport::TestCase.test_order = :random
+require 'minitest/autorun'

@@ -1,0 +1,14 @@
+<ul>
+  <% 10.times do |i| %>
+    <li>
+      <h2><%= "srv-#{i+1}" %></h2>
+      <div class="ip">187.23.75.<%= i+1 %></div>
+      <div class="uptime">
+        <%= render_later "srv-#{i+1}" do %>
+          <% sleep 0.3 if Rails.env.development? %>
+          UP · <%= 99 + i/10.0 %>%
+        <% end %>
+      </uptime>
+    </li>
+  <% end %>
+</ul>

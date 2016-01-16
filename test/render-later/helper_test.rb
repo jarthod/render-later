@@ -1,7 +1,8 @@
 require 'test_helper'
+require './app/helpers/render_later/view_helper.rb'
 
 class RenderLater::HelperTest < ActionView::TestCase
-  include RenderLater::Helper
+  include RenderLater::ViewHelper
   attr_accessor :request
 
   def setup

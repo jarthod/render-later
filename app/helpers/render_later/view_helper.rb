@@ -1,5 +1,19 @@
 module RenderLater
-  module Helper
+  module ViewHelper
+    INSERT_FUNCTION = <<~JAVASCRIPT.freeze
+      function rl_insert(name, data) {
+        if (node = document.getElementById(name)) {
+          var div = document.createElement('div');
+          div.innerHTML = data;
+          var elements = div.childNodes;
+          for (var i = elements.length; i > 0; i--) {
+            node.parentNode.insertBefore(elements[0], node);
+          }
+          node.parentNode.removeChild(node);
+        }
+      };
+    JAVASCRIPT
+
     def render_later key, &block
       store_object(key, &block)
       content_tag(:span, nil, id: "rl-#{key}", class: "rl-placeholder", style: 'display: none')
@@ -7,20 +21,9 @@ module RenderLater
 
     def render_now
       return nil if deferred_objects.empty?
-      concat content_tag('script', raw(<<-JAVASCRIPT))
-        function rl_insert(name, data) {
-          if (node = document.querySelector(name)) {
-            var div = document.createElement('div');
-            div.innerHTML = data;
-            var elements = div.childNodes;
-            for (var i = elements.length; i > 0; i--) {
-              node.parentNode.insertBefore(elements[0], node);
-            }
-          }
-        };
-      JAVASCRIPT
+      concat content_tag('script', raw(INSERT_FUNCTION))
       deferred_objects.each do |key, block|
-        concat content_tag('script', raw("rl_insert('#rl-#{key}', '#{j capture(&block)}');\n"))
+        concat content_tag('script', raw("rl_insert('rl-#{key}', '#{j capture(&block)}');\n"))
       end
       nil
     end
