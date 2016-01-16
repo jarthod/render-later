@@ -9,3 +9,4 @@
 /tmp/
 /test/dummy/tmp
 /test/dummy/log
+/test/gemfiles/*.lock
