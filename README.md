@@ -84,8 +84,9 @@ Phusion Passenger | ✔️         |
 Unicorn           | ✔️         | _with `tcp_nopush: false`_
 puma              | ✔️         |
 WEBrick           | ❌         | _default for `rails s`_
+Thin              | ❌         |
 
-To try it in development I recommend simply adding `gem 'puma'` to your `Gemfile` and `rails s` will use it. Though it's totally fine to work with a server which doesn't support streaming, you just won't benefit from the speed.
+To try it in development, I recommend adding `gem 'unicorn-rails'` to your `Gemfile`'s development group and use `UNICORN_WORKERS=4 rails s` to start it. We need multiple processes in development to avoid blocking CSS requests during the page load. It's totally fine to develop with a single process or a server which doesn't support streaming, you just won't see the effects of the gem.
 
 #### Template Engine
 Like for web servers, some template engine in Rails doesn't support streaming and requires to generate the entire page before sending it on the wire. You will need to avoid them at least for the layout page which will contain the `render_now` statement.
