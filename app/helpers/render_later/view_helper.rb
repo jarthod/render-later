@@ -1,6 +1,6 @@
 module RenderLater
   module ViewHelper
-    INSERT_FUNCTION = <<~JAVASCRIPT.freeze
+    INSERT_FUNCTION = <<-JAVASCRIPT.freeze
       function rl_insert(name, data) {
         if (node = document.getElementById(name)) {
           var div = document.createElement('div');
