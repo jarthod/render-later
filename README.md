@@ -14,12 +14,34 @@ gem 'render-later'
 
 ## Usage
 
-TODO: Write usage instructions here
+In your views, simply wrap a slow piece of code into a {{render_later}} block, and gives it a unique key as argument, like you would do with {{cache}}:
+```erb
+<div class="server">
+  <%= server.name %>
+  <%= render_later "srv-uptime-#{server.id}" do %>
+    <%= server.uptime %>
+  <% end %>
+</uptime>
+```
+It's important to use the `<%=` erb tag here, as the helper will render a hidden span tag.
+
+In your layout, before the end of the body tag, add a call to {{render_now}}:
+```erb
+  <body>
+    <%= yield %>
+    <%= render_now %>
+  </body>
+```
+This is where the defered blocks will be rendered and injected into the page using inline javascript.
 
 ## Performance
 very good, latency, delay etc..
 
 ## Compatibility
+
+On the server side, the gem is tested against `ruby 2.1+` and `rails 4.1+`.
+The dependency is not strictly enforced and it may work with others version but we don't guaranty anything.
+
 The generated javascript is a simple inline function using nothing else than DOM Core level 2 properties, so it should work flawlessly on IE6+, Firefox 2+, Chrome 1+, Edge, Safari, etc.
 
 ## Gotcha

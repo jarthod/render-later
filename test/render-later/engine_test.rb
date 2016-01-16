@@ -1,7 +1,7 @@
 require 'test_helper'
-require 'capybara-webkit'
+require 'capybara/poltergeist'
 Capybara.app = Rails.application
-Capybara.default_driver = :webkit
+Capybara.default_driver = :poltergeist
 
 class RenderLater::EngineTest < ActionDispatch::IntegrationTest
   include Capybara::DSL
