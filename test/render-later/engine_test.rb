@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'capybara/dsl'
 require 'capybara/poltergeist'
 Capybara.app = Rails.application
 Capybara.default_driver = :poltergeist
