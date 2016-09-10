@@ -26,6 +26,7 @@ module RenderLater
         concat content_tag('script', raw("rl_insert('rl-#{key}', '#{j capture(&block)}');\n"))
       end
       nil
+    rescue Errno::EPIPE
     end
 
     private
@@ -38,7 +39,11 @@ module RenderLater
     end
 
     def deferred_objects
-      request.instance_variable_get(:@deferred_objects) || {}
+      if request.instance_variable_defined?(:@deferred_objects)
+        request.instance_variable_get(:@deferred_objects)
+      else
+        {}
+      end
     end
   end
 end
