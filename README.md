@@ -36,6 +36,14 @@ In your layout, before the end of the body tag, add a call to `render_now`:
 ```
 This is where the deferred blocks will be rendered and injected into the page using inline javascript.
 
+And finally in your controller, you need to render with the `stream` option:
+
+```ruby
+  def index
+    render stream: true
+  end
+```
+
 ## Performance
 
 Performance-wise, this approach is quite interesting, let me explain why:
