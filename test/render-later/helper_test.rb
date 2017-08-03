@@ -21,6 +21,16 @@ class RenderLater::HelperTest < ActionView::TestCase
     refute_empty send(:deferred_objects)
   end
 
+  def test_render_later_accepts_custom_tag
+    res = render_later("key", tag: :tr) { assert false }
+    assert_dom_equal res, '<tr id="rl-key" class="rl-placeholder" style="display: none"></tr>'
+  end
+
+  def test_render_later_accepts_custom_class
+    res = render_later("key", class: :loading) { assert false }
+    assert_dom_equal res, '<span id="rl-key" class="loading" style="display: none"></span>'
+  end
+
   def test_render_later_does_not_accept_duplicate_key
     render_later("key") { assert false }
     ex = assert_raises RenderLater::Error do

@@ -25,7 +25,14 @@ In your views, simply wrap a slow piece of code into a `render_later` block, and
   <% end %>
 </div>
 ```
-It's important to use the `<%=` erb tag here, as the helper will render a hidden span tag.
+It's important to use the `<%=` erb tag here, as the helper will render a hidden `span` tag. If a `span` tag doesn't work well for you (ex: in a table), you can customize the placeholder element with the `tag` keyword argument, ex:
+```erb
+<table>
+  <%= render_later "srv-uptime-#{server.id}", tag: :tr do %>
+    <tr><td><%= server.uptime %></td></tr>
+  <% end %>
+</table>
+```
 
 In your layout, before the end of the body tag, add a call to `render_now`:
 ```erb
@@ -148,7 +155,6 @@ After checking out the repo, run `bundle install` to install dependencies. Then,
 - Wider test coverage across browsers using [Sauce Labs](https://saucelabs.com/opensauce/)
 - Parallel rendering (I tried quickly but the `capture` helper isn't thread-safe)
 - Add options to do caching at the same time (with the same key)
-- Add options to customize the generated temporary element (could be used for loading indication or to avoid CSS conflict)
 
 ## License
 

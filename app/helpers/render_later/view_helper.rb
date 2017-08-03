@@ -3,7 +3,7 @@ module RenderLater
     INSERT_FUNCTION = <<-JAVASCRIPT.freeze
       function rl_insert(name, data) {
         if (node = document.getElementById(name)) {
-          var div = document.createElement('div');
+          var div = document.createElement(node.parentNode.tagName || 'div');
           div.innerHTML = data;
           var elements = div.childNodes;
           for (var i = elements.length; i > 0; i--) {
@@ -14,9 +14,9 @@ module RenderLater
       };
     JAVASCRIPT
 
-    def render_later key, &block
+    def render_later key, tag: :span, class: "rl-placeholder", &block
       store_object(key, &block)
-      content_tag(:span, nil, id: "rl-#{key}", class: "rl-placeholder", style: 'display: none')
+      content_tag(tag, nil, id: "rl-#{key}", class: binding.local_variable_get(:class), style: 'display: none')
     end
 
     def render_now
