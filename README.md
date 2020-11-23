@@ -47,6 +47,9 @@ And finally in your controller, you need to render with the `stream` option:
 
 ```ruby
   def index
+    # You may also need (see Gotcha section):
+    # form_authenticity_token; flash
+    # headers['Last-Modified'] = Time.now.httpdate
     render stream: true
   end
 ```
@@ -54,7 +57,7 @@ And finally in your controller, you need to render with the `stream` option:
 ## Performance
 
 Performance-wise, this approach is quite interesting, let me explain why:
-We know for a time that with bandwidth always increasing, web performance is getting more and more constrained by latency.
+We know that bandwidth is always increasing, web performance is getting more and more constrained by latency.
 
 For cases like this, there is usually two ways:
 
@@ -65,18 +68,21 @@ The first solution is, IMO, decent **if using streaming**, because the browser c
 
 The second solution gets the first page rendered quickly but is much more complex to setup (needs another endpoint to expose the data, an Ajax call to fetch them, and some js to put the data back where it belongs, handle loading spinner, errors, etc.). It is also much **slower to load**, because the browser needs to load & parse all the javascript, wait to the entire page to be ready (domready), and only then it will start the ajax call, adding the whole round-trip time once again to the page loading.
 
-Whereas with async-render, you leverage the existing open socket currently downloading the document to stream the deferred data:
+Whereas with render-later, you leverage the existing open socket currently downloading the document to stream the deferred data:
 - You don't have to handle errors, because it's the same request. So if it fails at this point, the browser will simply show it's native error page.
 - You don't have to show any kind of spinner because the browser is still showing it's native loading indicator.
-- You don't increase latency because the additional data start streaming right after the page is sent. And even better, the deferred data **starts rendering even if the browser didn't receive a single byte yet**, so if you're on a slow network (ex: 3G, 500ms rtt), instead of delaying even more (Ajax call), you'll actually receive the document **already complete**, because while the network lagged, the server was working :)
+- You don't increase latency because the additional data start streaming right away after the page is sent. And even better, the deferred data **starts rendering even if the browser didn't receive a single byte yet**, so if you're on a slow network (ex: 3G, 500ms rtt), instead of delaying even more (Ajax call), you'll actually receive the document **already complete**, because while the network lagged, the server was working :)
 
 So in the end, this solutions is the best of both world: you get the first paint time of the Ajax version, but with the simplicity and time-to-full-document of the simple inline version.
 
-The only downside of this approach is that the domeady event will only be executed at the end of the request, once the body is complete. See the [Gotcha section](#gotcha) for more details.
+The only downsides of this approach IMO are:
+1. The `domready` event will only be executed at the end of the end of the streaming, once the body is complete.
+2. Rails/rack support for streaming is bad and you may need to workaround some bugs.
+See the [Gotcha section](#gotcha) for more details.
 
 ## Compatibility
 
-On the server side, the gem is tested against `ruby 2.1+` and `rails 4.1+`.
+On the server side, the gem is tested against `ruby 2.3+` and `rails 4.1+`.
 The dependency is not strictly enforced though and it may work with others versions but we don't guaranty anything.
 
 The generated javascript is a simple inline function using nothing else than DOM Core level 2 properties, so it should work flawlessly on IE6+, Firefox 2+, Chrome 1+, Edge, Safari, etc.
@@ -97,11 +103,11 @@ Server            | Supported  | Comment
 ------------------|------------| -------
 Phusion Passenger | ✔️         |
 Unicorn           | ✔️         | _with `tcp_nopush: false`_
-puma              | ✔️         |
-WEBrick           | ❌         | _default for `rails s`_
+puma              | ✔️         | _default for `rails s`_
+WEBrick           | ❌         |
 Thin              | ❌         |
 
-To try it in development, I recommend adding `gem 'unicorn-rails'` to your `Gemfile`'s development group and use `UNICORN_WORKERS=4 rails s` to start it. We need multiple processes in development to avoid blocking CSS requests during the page load. It's totally fine to develop with a single process or a server which doesn't support streaming, you just won't see the effects of the gem.
+To try it in development, I recommend using `puma` (the default Rails server) with `rails s`. We need the multiple threads in development to avoid blocking CSS/JS requests during the page streaming. It's totally fine to develop with a single thread/process or a server which doesn't support streaming, you just won't see the effects of the gem.
 
 ### gzip
 
@@ -129,6 +135,7 @@ Slim            | ✔️         |
 Haml            | ❌         |
 
 #### Flash message & CSRF token
+
 There is currently an [issue with Rails i'm trying to revive](https://github.com/rails/rails/issues/11476) about streaming causing trouble with flash messages and CSRF tokens. This is because rails waits the end of the request to check if you have used the flash message, if so it is removed from the store, otherwise it stays for the next request. But with streaming on, rails considers the requests as ended very early, before the flash message ever gets a change to be rendered. So this logic fails and keeps the flash message forever. The problem is exactly the same with the CSRF token.
 
 The best **workaround** we currently have is to fool rails by accessing the flash message and CSRF token before the render call:
@@ -141,7 +148,22 @@ The best **workaround** we currently have is to fool rails by accessing the flas
   end
 ```
 
+#### Rack 2.2.x & ETag Middleware
+
+There's a recent change in `rack 2.2.x` which broke streaming in Rails as can [be seen in this issue](https://github.com/rack/rack/issues/1619). The problem is that the ETag middleware used to ignore streaming response because of the `Cache-Control: no-cache` header (which is set by Rails for streaming response) and now it doesn't any more (because this behavior wasn't really valid). But the ETag middleware now has to process the whole body to generate the ETag header and thus blocks the response until everything is ready.
+
+The best **workaround** we currently have is to fool the ETag middleware by setting the `Last-Modified` header (if set, the ETag middleware is skipped):
+
+```ruby
+  # in the controller, before every streaming render.
+  def index
+    headers['Last-Modified'] = Time.now.httpdate
+    render stream: true
+  end
+```
+
 #### Caching
+
 Finally, before your scratch your head, be careful not to put fragment caching **outside** a `render_later` block, because that would actually cache the empty span but not the inline script (which is generated by `render_now`), so it would be a waste and the real content will never be injected. It's totally **fine/recommended** to use fragment caching **inside** the `render_later` block.
 
 ## Contributing
@@ -149,6 +171,23 @@ Finally, before your scratch your head, be careful not to put fragment caching *
 Bug reports and pull requests are welcome on GitHub at https://github.com/jarthod/render-later.
 
 After checking out the repo, run `bundle install` to install dependencies. Then, run `rake` to run the tests.
+
+Start the demo server:
+```bash
+cd test/dummy && rails s
+```
+
+Verify the streaming behavior in browser (http://localhost:3000) or curl:
+```bash
+curl http://localhost:3000
+```
+
+Test with a specific Rails version:
+```bash
+cd test/dummy
+bundle install --gemfile=../gemfiles/rails-5.0.gemfile
+bundle exec --gemfile=../gemfiles/rails-5.0.gemfile rails s
+```
 
 ## Ideas for improvement
 
