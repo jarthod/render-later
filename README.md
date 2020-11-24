@@ -1,4 +1,4 @@
-# render-later [![Build Status](https://travis-ci.org/jarthod/render-later.svg?branch=master)](https://travis-ci.org/jarthod/render-later)
+# render-later [![Build Status](https://travis-ci.com/jarthod/render-later.svg?branch=master)](https://travis-ci.com/jarthod/render-later)
 
 render-later is a Rails helper allowing you to **defer** the rendering of slow parts of your views to the end of the page, drastically improving the time to first paint and thus the perceived performance.
 
