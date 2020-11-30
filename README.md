@@ -109,22 +109,6 @@ Thin              | ❌         |
 
 To try it in development, I recommend using `puma` (the default Rails server) with `rails s`. We need the multiple threads in development to avoid blocking CSS/JS requests during the page streaming. It's totally fine to develop with a single thread/process or a server which doesn't support streaming, you just won't see the effects of the gem.
 
-### gzip
-
-Unforunately I counldn't manage to make streaming works with gzip compression (provided by default in nginx), which means that if you're using nginx to compress your pages (and you should) this won't work, the page will be rendered all at once as before. I haven't investigated much but it seems to be because nginx need to have the whole body to compress it all at once and then start streaming the compressed body (but it's too late).
-
-So the only workaround I have it to disable gzip compression for pages you want to stream, and no, it won't hurt performance that much. Sending 50kb html instead 6kb gzip is fine if it saves 3sec in render time.
-
-Example:
-```
-location / {
-  if ( $request_uri ~ ^/slow$ ) {
-    gzip off;
-  }
-  ...
-}
-```
-
 #### Template Engine
 Like for web servers, some template engine in Rails doesn't support streaming and requires to generate the entire page before sending it on the wire. You will need to avoid them at least for the layout page which will contain the `render_now` statement.
 
@@ -152,7 +136,21 @@ The best **workaround** we currently have is to fool rails by accessing the flas
 
 There's a recent change in `rack 2.2.x` which broke streaming in Rails as can [be seen in this issue](https://github.com/rack/rack/issues/1619). The problem is that the ETag middleware used to ignore streaming response because of the `Cache-Control: no-cache` header (which is set by Rails for streaming response) and now it doesn't any more (because this behavior wasn't really valid). But the ETag middleware now has to process the whole body to generate the ETag header and thus blocks the response until everything is ready.
 
-The best **workaround** we currently have is to fool the ETag middleware by setting the `Last-Modified` header (if set, the ETag middleware is skipped):
+The best **workaround** we currently have until this problem is fixed is to monkey patch Rack::ETag with:
+```ruby
+# Monkey patch for Rack::ETag (ver 2.2+) to prevent breaking streaming responses (chunked)
+# See https://github.com/rack/rack/issues/1619 for more details on the problem
+
+module Rack
+  class ETag
+    def skip_caching?(headers)
+      headers.key?(ETAG_STRING) || headers[TRANSFER_ENCODING] == "chunked" || headers.key?('Last-Modified')
+    end
+  end
+end
+```
+
+Another option you may use if you only need it once or twice is to fool the ETag middleware by setting the `Last-Modified` header from the controller (if set, the ETag middleware is skipped):
 
 ```ruby
   # in the controller, before every streaming render.
