@@ -23,6 +23,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest"
   spec.add_development_dependency "rails", ">= 4.1"
-  spec.add_development_dependency "puma"
-  spec.add_development_dependency "poltergeist"
+  spec.add_development_dependency "puma", "!= 6.0.0"
+  spec.add_development_dependency "cuprite"
 end

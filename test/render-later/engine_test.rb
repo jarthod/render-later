@@ -1,9 +1,9 @@
 require 'test_helper'
 require 'capybara/dsl'
-require 'capybara/poltergeist'
+require 'capybara/cuprite'
 Capybara.app = Rails.application
 Capybara.server = :puma, { Silent: true }
-Capybara.default_driver = :poltergeist
+Capybara.default_driver = :cuprite
 
 class RenderLater::EngineTest < ActionDispatch::IntegrationTest
   include Capybara::DSL

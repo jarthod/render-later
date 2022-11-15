@@ -1,4 +1,4 @@
-# render-later [![Build Status](https://travis-ci.com/jarthod/render-later.svg?branch=master)](https://travis-ci.com/jarthod/render-later)
+# render-later
 
 render-later is a Rails helper allowing you to **defer** the rendering of slow parts of your views to the end of the page, drastically improving the time to first paint and thus the perceived performance.
 
@@ -103,9 +103,11 @@ Server            | Supported  | Comment
 ------------------|------------| -------
 Phusion Passenger | ✔️         |
 Unicorn           | ✔️         | _with `tcp_nopush: false`_
-puma              | ✔️         | _default for `rails s`_
+puma              | ✔️*        | _default for `rails s`_
 WEBrick           | ❌         |
 Thin              | ❌         |
+
+\*puma `6.0.0` is not compatible due to https://github.com/puma/puma/issues/3000
 
 To try it in development, I recommend using `puma` (the default Rails server) with `rails s`. We need the multiple threads in development to avoid blocking CSS/JS requests during the page streaming. It's totally fine to develop with a single thread/process or a server which doesn't support streaming, you just won't see the effects of the gem.
 
