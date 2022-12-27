@@ -50,6 +50,7 @@ And finally in your controller, you need to render with the `stream` option:
     # You may also need (see Gotcha section):
     # form_authenticity_token; flash
     # headers['Last-Modified'] = Time.now.httpdate
+    # headers['X-Accel-Buffering'] = 'no'
     render stream: true
   end
 ```
@@ -110,6 +111,22 @@ Thin              | ❌         |
 \*puma `6.0.0` is not compatible due to https://github.com/puma/puma/issues/3000
 
 To try it in development, I recommend using `puma` (the default Rails server) with `rails s`. We need the multiple threads in development to avoid blocking CSS/JS requests during the page streaming. It's totally fine to develop with a single thread/process or a server which doesn't support streaming, you just won't see the effects of the gem.
+
+#### Reverse proxy
+
+If you are using an HTTP reverse proxy such as nginx, you may encounter some buffering issues as the reverse proxy batch together several chunks (or even the whole response) and send them at once, effectively defeating the reader-later feature. If you notice this issue the best way I found to avoid it in nginx is to disable `proxy_buffering` but only for the streamed responses, using the `X-Accel-Buffering: no` header. In the controller it looks like this:
+
+```ruby
+  def index
+    form_authenticity_token; flash
+    headers['X-Accel-Buffering'] = 'no' # disable nginx buffering
+    render stream: allow_streaming
+  end
+```
+
+It's possible to disable `proxy_buffering` globally and many post on the internet will recommend this but it's a bad idea IMO because it makes your responses slower, more vulnerable to some attacks (slow client), and also breaks/disable other features like nginx caching. So better do it only for the endpoints which really need that, and usually don't need caching. If your endpoint is publicly cacheable by the reverse proxy, there's not much point in using render-later anyway, better optimize the cache rate so almost everybody experiences fast response times.
+
+Also I tried playing with `proxy_buffers`, `proxy_buffer_size`, `proxy_busy_buffers_size` and `gzip_buffers` to see if could reduce the buffering sufficiently to keep it enabled while still benefiting from render-later. Without compression it was OK but with gzip compression enabled I couldn't. No matter how small buffers I declared I was still receiving at least the first 16kB together which was not granular enough for my needs. If you are using render-later for very large pages, you might be able to keep the buffering+compression enabled and still see enough benefits. 
 
 #### Template Engine
 Like for web servers, some template engine in Rails doesn't support streaming and requires to generate the entire page before sending it on the wire. You will need to avoid them at least for the layout page which will contain the `render_now` statement.
