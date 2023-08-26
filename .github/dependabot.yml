@@ -6,3 +6,8 @@ updates:
     interval: monthly
     time: "09:00"
     timezone: Europe/Paris
+  groups:
+    minors:
+      update-types:
+      - "minor"
+      - "patch"
