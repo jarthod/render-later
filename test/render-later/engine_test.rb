@@ -3,6 +3,11 @@ require 'capybara/dsl'
 require 'capybara/cuprite'
 Capybara.app = Rails.application
 Capybara.server = :puma, { Silent: true }
+
+Capybara.register_driver :cuprite do |app|
+  Capybara::Cuprite::Driver.new(app, js_errors: true, process_timeout: 30.seconds, headless: true)
+end
+
 Capybara.default_driver = :cuprite
 
 class RenderLater::EngineTest < ActionDispatch::IntegrationTest
