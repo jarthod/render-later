@@ -202,8 +202,8 @@ curl http://localhost:3000
 Test with a specific Rails version:
 ```bash
 cd test/dummy
-bundle install --gemfile=../gemfiles/rails-5.0.gemfile
-bundle exec --gemfile=../gemfiles/rails-5.0.gemfile rails s
+bundle install --gemfile=../gemfiles/rails-8.0
+bundle exec --gemfile=../gemfiles/rails-8.0 rails s
 ```
 
 ## Ideas for improvement
