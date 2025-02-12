@@ -18,6 +18,7 @@ jobs:
     env: # $BUNDLE_GEMFILE must be set at the job level, so it is set for all steps
       BUNDLE_GEMFILE: test/gemfiles/${{ matrix.gemfile }}
     strategy:
+      fail-fast: false
       matrix:
         ruby-version: [ '3.2', '3.3', '3.4' ]
         gemfile: [ 'rails-7.1', 'rails-7.2', 'rails-8.0' ]
